@@ -2,6 +2,7 @@ from tkinter import *
 from tkinter import font as tkFont
 from urllib.request import urlopen
 from PIL import ImageTk, Image
+from empyrial import get_returns, empyrial, Engine
 try:
     # Python 2 support
     from base64 import encodestring
@@ -9,7 +10,8 @@ except ImportError:
     # Python 3.9.0+ support
     from base64 import encodebytes as encodestring
 import io
-
+import time
+from pandastable import Table, config
 
 def page1(window):
     canvas = Canvas(
@@ -100,21 +102,52 @@ def page2(window):
     def on_leave(e):
         btn['background'] = "#415778"
 
+
     def returnEntry(arg=None):
+        global df
+        def Convert(string):
+            li = list(string.split("-"))
+            return li
+
         """Gets the result from Entry and return it to the Label"""
 
-        result = start.get()
-        resultLabel.config(text=result)
-        start.delete(0, END)
+        portf = Convert(portfolio.get())
 
+        lists = Convert(allocation.get())
+        liste = [float(i) for i in lists]
+
+        bench = Convert(benchmark.get())
+
+        port = Engine(
+            start_date = start.get(),
+            portfolio = portf,
+            weights = liste,
+            benchmark = bench
+        )
+
+        frame = Frame(window, width=300, height=975, bg='#00041f')
+        frame.pack(side=TOP, anchor=NE, fill='y',expand=True)
+        df = empyrial(port)
+        table = Table(frame, dataframe = df)
+        options = config.load_options()
+        #options is a dict that you can set yourself
+        options = {'colheadercolor':'#415778',
+                    'cellbackgr': '#00041f',
+                    'grid_color': '#415778',
+                    'rowselectedcolor': '',
+                    'textcolor': 'white',
+
+                    }
+        
+        config.apply_options(options, table)
+        table.show()
   
+    
     btn = Button(window, text = 'Backtest', bd = '0', bg="#415778", fg="#ffffff", command=returnEntry)
     btn.place(relx=0.173, rely=0.36, anchor=CENTER)
     btn.config(height = 2, width = 17 )
     btn.bind("<Enter>", on_enter)
     btn.bind("<Leave>", on_leave)
-    resultLabel = Label(window, text="")
-    resultLabel.pack(fill=X)
 
 
     
@@ -133,10 +166,11 @@ def changepage():
 
 pagenum = 1
 window = Tk()
+window.title('Empyrial')
 window.geometry("1440x975")
 window.configure(bg = "#00041f")
 logo = PhotoImage(file='image\image.png')
 logo2 = PhotoImage(file='image\images.png')
 page1(window)
 window.resizable(False, False)
-window.mainloop()
+mainloop()
